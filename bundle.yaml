@@ -1,4 +1,5 @@
 ---
+name: mlflow
 applications:
   mlflow-server:
     charm: "cs:mlflow-server"
