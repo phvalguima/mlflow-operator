@@ -19,9 +19,7 @@ jobs:
         set -eux
         sudo snap install charm --classic
         sudo snap install juju-bundle --classic
-        sudo apt update
-        sudo apt install python3-pip
-        sudo pip3 install charmcraft==1.0.0
+        sudo snap install charmcraft --classic --channel=latest/edge
 
     - name: Publish bundle
       env:
@@ -29,7 +27,4 @@ jobs:
       run: |
         set -eux
         echo $CHARMSTORE_CREDENTIAL > ~/.go-cookies
-        juju-bundle publish \
-            --url cs:~mlflow-charmers/mlflow \
-            --publish-charms \
-            --publish-namespace mlflow-charmers
+        juju-bundle publish --destructive-mode --serial

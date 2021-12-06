@@ -17,7 +17,6 @@ def driver(request):
     status = yaml.safe_load(
         check_output(
             [
-                "microk8s",
                 "kubectl",
                 "get",
                 "services/istio-ingressgateway",

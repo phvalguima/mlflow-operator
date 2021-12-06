@@ -1,15 +1,18 @@
 ---
+name: mlflow
 applications:
   mlflow-server:
-    charm: "cs:mlflow-server"
+    charm: mlflow-server
     scale: 1
 
   mysql:
-    charm: "cs:~charmed-osm/mariadb-k8s-35"
+    charm: charmed-osm-mariadb-k8s
+    channel: latest/stable
     scale: 1
 
   minio:
-    charm: "cs:minio"
+    charm: minio
+    channel: latest/stable
     scale: 1
 
 bundle: kubernetes

@@ -26,47 +26,31 @@ jobs:
     - name: Check out repo
       uses: actions/checkout@v2
 
-    - uses: balchua/microk8s-actions@v0.2.2
+    - name: Setup operator environment
+      uses: charmed-kubernetes/actions-operator@main
       with:
-        channel: '1.20/stable'
-        addons: '["dns", "storage", "rbac", "metallb:10.64.140.43-10.64.140.49"]'
+        provider: microk8s
+        charmcraft-channel: latest/candidate
 
     - name: Install dependencies
       run: |
         set -eux
-        sudo snap install charm --classic
-        sudo snap install juju --classic
-        sudo snap install juju-bundle --classic
         sudo snap install juju-wait --classic
-        sudo pip3 install charmcraft==1.0.0
         sudo apt update
         sudo apt install -y firefox-geckodriver tox
 
-    # Avoid race condition with storage taking a long time to initialize
-    - name: Wait for storage
-      run: |
-        sg microk8s -c 'microk8s kubectl rollout status deployment/hostpath-provisioner -n kube-system'
+    - name: Ensure storage is up
+      run: kubectl rollout status deployment/hostpath-provisioner -n kube-system
 
-    - name: Bootstrap
-      run: |
-        set -eux
-        sg microk8s -c 'juju bootstrap microk8s uk8s'
-        juju add-model mlflow
+    - run: sg microk8s -c 'juju bootstrap microk8s uk8s'
+    - run: juju add-model mlflow
 
     - name: Deploy charm dependencies
-      timeout-minutes: 15
       run: |
         set -eux
-        juju model-config update-status-hook-interval=15s
-        juju deploy cs:istio
-        juju config istio-pilot default-gateway=kubeflow-gateway
-        sleep 10
-        kubectl patch role -n mlflow istio-ingressgateway-operator -p '{"apiVersion":"rbac.authorization.k8s.io/v1","kind":"Role","metadata":{"name":"istio-ingressgateway-operator"},"rules":[{"apiGroups":["*"],"resources":["*"],"verbs":["*"]}]}'
+        juju deploy istio --trust
+        juju config istio-pilot default-gateways=kubeflow-gateway
         juju wait -wvt 300
-        juju model-config update-status-hook-interval=5m
-
-        # https://bugs.launchpad.net/juju/+bug/1921739
-        (i=600; while ! juju wait -wvt 30 ; do ((--i)) || exit; sleep 1; done)
 
     - name: Deploy MLflow
       run: |
@@ -75,8 +59,7 @@ jobs:
         juju relate mlflow-server istio-pilot
         juju wait -wvt 300
 
-    - name: Test MLflow
-      run: sg microk8s -c 'tox -e selenium'
+    - run: tox -e selenium
 
     - run: kubectl get all -A
       if: failure()
@@ -87,12 +70,10 @@ jobs:
     - run: juju status
       if: failure()
 
-    - name: Get mlflow workload logs
-      run: kubectl logs --tail 100 -nmlflow -lapp.kubernetes.io/name=mlflow-server
+    - run: kubectl logs --tail 100 -nmlflow -lapp.kubernetes.io/name=mlflow-server
       if: failure()
 
-    - name: Get mlflow operator logs
-      run: kubectl logs --tail 100 -nmlflow -loperator.juju.is/name=mlflow-server
+    - run: kubectl logs --tail 100 -nmlflow -loperator.juju.is/name=mlflow-server
       if: failure()
 
     - name: Generate inspect tarball

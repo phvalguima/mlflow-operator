@@ -1,17 +1,13 @@
 # Copyright 2020 Luke Marsden
 # See LICENSE file for licensing details.
 name: mlflow-server
-description: |
-  MLflow
-summary: |
-  A charm which provides a Kubernetes installation of the MLflow (https://mlflow.org/) server.
+description: MLflow
+summary: Provides a Kubernetes installation of the MLflow (https://mlflow.org/) server
 series: [kubernetes]
-tags: [mlflow]
 resources:
   oci-image:
     type: oci-image
     description: Backing OCI image
-    auto-fetch: true
     upstream-source: quay.io/helix-ml/mlflow:1.13.1
 requires:
   db:
