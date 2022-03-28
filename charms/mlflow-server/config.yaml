@@ -47,3 +47,14 @@ options:
       The nodeport for Kubeflow (istio-ingressgateway)
     type: int
     default: 30600
+  prometheus_path:
+    type: string
+    default: /prometheus
+    description: |
+      Path to expose the prometheus metrics
+  expose_services:
+    type: boolean
+    default: true
+    description: |
+      Expose mlflow using LB and NodePort
+
